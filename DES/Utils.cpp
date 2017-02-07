@@ -1,6 +1,8 @@
 #include "Utils.h"
 #include <stdio.h>
 
+// this method is for debugging purposes. it prints the binary value of the item passed
+// in and works with any size value.
 void printBits(size_t const size, void const * const ptr) {
 	unsigned char *b = (unsigned char*)ptr;
 	unsigned char byte;

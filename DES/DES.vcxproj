@@ -146,11 +146,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DES.cpp" />
     <ClCompile Include="KeyGen.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DES.h" />
     <ClInclude Include="KeyGen.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Utils.h" />

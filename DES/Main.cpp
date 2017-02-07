@@ -1,13 +1,14 @@
 #include <iostream>
 #include <fstream>
+#include <string>
+
 #include "KeyGen.h"
 #include "Macros.h"
 #include "Utils.h"
-
+#include "DES.h"
 using namespace std;
 
-BIG initialPermutation(BIG text);
-BIG initialPermutation(BIG text);
+BIG garbageGenerator(int bytesRequired);
 
 int main(int argc, char *argv[]) {
 	// make sure we have input in the form 
@@ -110,166 +111,46 @@ int main(int argc, char *argv[]) {
 	}
 
 	inputStream.seekg(0, inputStream.end);
-	BIG length = inputStream.tellg();
+	unsigned int length = inputStream.tellg();
 	inputStream.seekg(0, inputStream.beg);
+
+	ofstream outputStream;
+	outputStream.open(argv[5], std::ios::binary);
+
+
 
 	// now that we have gotten this far we know that all inputs have been verified and now we can move
 	// on to the key generation for each of the 16 rounds
 	BIG * keyList = generateKeys(key);
 
+	// first we will handle encrypting 
+	if (encrypting) {
+		// the first block of our encrypted file needs to contain garbage on the left and the file size
+		// on the right. so we generate the garbage and then shift it to the left half and then OR with 
+		// it the size of the file
+		BIG firstBlock = garbageGenerator(4);
+		firstBlock = firstBlock << 32;
+		firstBlock |= length;
+
+		firstBlock = runDES(keyList, firstBlock);
+
+		outputStream.write((char*)firstBlock, sizeof(firstBlock));
+
+	}
+
 	return 0;
 }
 
-// the basics of the permutation are commented in KeyGen.cpp.
-// please refer to keyPBox64_56 to understand how this aspect works
-BIG initialPermutation(BIG text) {
-	BIG one = 1;
-	BIG permutedText = 0;
+// this will be used to create padding for the encrypting section
+BIG garbageGenerator(int bytesRequired) {
 
-	if (text & (one << 63)) permutedText |= (one << (64 - 40));
-	if (text & (one << 62)) permutedText |= (one << (64 - 8));
-	if (text & (one << 61)) permutedText |= (one << (64 - 48));
-	if (text & (one << 60)) permutedText |= (one << (64 - 16));
-	if (text & (one << 59)) permutedText |= (one << (64 - 56));
-	if (text & (one << 58)) permutedText |= (one << (64 - 24));
-	if (text & (one << 57)) permutedText |= (one << (64 - 64));
-	if (text & (one << 56)) permutedText |= (one << (64 - 32));
-	if (text & (one << 55)) permutedText |= (one << (64 - 39));
-	if (text & (one << 54)) permutedText |= (one << (64 - 7));
-	if (text & (one << 53)) permutedText |= (one << (64 - 47));
-	if (text & (one << 52)) permutedText |= (one << (64 - 15));
-	if (text & (one << 51)) permutedText |= (one << (64 - 55));
-	if (text & (one << 50)) permutedText |= (one << (64 - 23));
-	if (text & (one << 49)) permutedText |= (one << (64 - 63));
-	if (text & (one << 48)) permutedText |= (one << (64 - 31));
+	BIG garbage = 0;
 
-	if (text & (one << 47)) permutedText |= (one << (64 - 38));
-	if (text & (one << 46)) permutedText |= (one << (64 - 6));
-	if (text & (one << 45)) permutedText |= (one << (64 - 46));
-	if (text & (one << 44)) permutedText |= (one << (64 - 14));
-	if (text & (one << 43)) permutedText |= (one << (64 - 54));
-	if (text & (one << 42)) permutedText |= (one << (64 - 22));
-	if (text & (one << 41)) permutedText |= (one << (64 - 62));
-	if (text & (one << 40)) permutedText |= (one << (64 - 30));
-	if (text & (one << 39)) permutedText |= (one << (64 - 37));
-	if (text & (one << 38)) permutedText |= (one << (64 - 5));
-	if (text & (one << 37)) permutedText |= (one << (64 - 45));
-	if (text & (one << 36)) permutedText |= (one << (64 - 13));
-	if (text & (one << 35)) permutedText |= (one << (64 - 53));
-	if (text & (one << 34)) permutedText |= (one << (64 - 21));
-	if (text & (one << 33)) permutedText |= (one << (64 - 61));
-	if (text & (one << 32)) permutedText |= (one << (64 - 29));
+	while (bytesRequired > 0) {
+		garbage = garbage << 8;
+		garbage |= rand() % 256;
+		bytesRequired--;
+	}
 
-	if (text & (one << 31)) permutedText |= (one << (64 - 36));
-	if (text & (one << 30)) permutedText |= (one << (64 - 4));
-	if (text & (one << 29)) permutedText |= (one << (64 - 44));
-	if (text & (one << 28)) permutedText |= (one << (64 - 12));
-	if (text & (one << 27)) permutedText |= (one << (64 - 52));
-	if (text & (one << 26)) permutedText |= (one << (64 - 20));
-	if (text & (one << 25)) permutedText |= (one << (64 - 60));
-	if (text & (one << 24)) permutedText |= (one << (64 - 28));
-	if (text & (one << 23)) permutedText |= (one << (64 - 35));
-	if (text & (one << 22)) permutedText |= (one << (64 - 3));
-	if (text & (one << 21)) permutedText |= (one << (64 - 43));
-	if (text & (one << 20)) permutedText |= (one << (64 - 11));
-	if (text & (one << 19)) permutedText |= (one << (64 - 51));
-	if (text & (one << 18)) permutedText |= (one << (64 - 19));
-	if (text & (one << 17)) permutedText |= (one << (64 - 59));
-	if (text & (one << 16)) permutedText |= (one << (64 - 27));
-
-	if (text & (one << 15)) permutedText |= (one << (64 - 34));
-	if (text & (one << 14)) permutedText |= (one << (64 - 2));
-	if (text & (one << 13)) permutedText |= (one << (64 - 42));
-	if (text & (one << 12)) permutedText |= (one << (64 - 10));
-	if (text & (one << 11)) permutedText |= (one << (64 - 50));
-	if (text & (one << 10)) permutedText |= (one << (64 - 18));
-	if (text & (one << 9)) permutedText |= (one << (64 - 58));
-	if (text & (one << 8)) permutedText |= (one << (64 - 26));
-	if (text & (one << 7)) permutedText |= (one << (64 - 33));
-	if (text & (one << 6)) permutedText |= (one << (64 - 1));
-	if (text & (one << 5)) permutedText |= (one << (64 - 41));
-	if (text & (one << 4)) permutedText |= (one << (64 - 9));
-	if (text & (one << 3)) permutedText |= (one << (64 - 49));
-	if (text & (one << 2)) permutedText |= (one << (64 - 17));
-	if (text & (one << 1)) permutedText |= (one << (64 - 57));
-	if (text & (one << 0)) permutedText |= (one << (64 - 25));
-
-	return permutedText;
-}
-
-// the basics of the permutation are commented in KeyGen.cpp.
-// please refer to keyPBox64_56 to understand how this aspect works
-BIG finalPermutation(BIG text) {
-	BIG one = 1;
-	BIG permutedText = 0;
-
-	if (text & (one << 63)) permutedText |= (one << (64 - 58));
-	if (text & (one << 62)) permutedText |= (one << (64 - 50));
-	if (text & (one << 61)) permutedText |= (one << (64 - 42));
-	if (text & (one << 60)) permutedText |= (one << (64 - 34));
-	if (text & (one << 59)) permutedText |= (one << (64 - 26));
-	if (text & (one << 58)) permutedText |= (one << (64 - 18));
-	if (text & (one << 57)) permutedText |= (one << (64 - 10));
-	if (text & (one << 56)) permutedText |= (one << (64 - 2));
-	if (text & (one << 55)) permutedText |= (one << (64 - 60));
-	if (text & (one << 54)) permutedText |= (one << (64 - 52));
-	if (text & (one << 53)) permutedText |= (one << (64 - 44));
-	if (text & (one << 52)) permutedText |= (one << (64 - 36));
-	if (text & (one << 51)) permutedText |= (one << (64 - 28));
-	if (text & (one << 50)) permutedText |= (one << (64 - 20));
-	if (text & (one << 49)) permutedText |= (one << (64 - 12));
-	if (text & (one << 48)) permutedText |= (one << (64 - 4));
-
-	if (text & (one << 47)) permutedText |= (one << (64 - 62));
-	if (text & (one << 46)) permutedText |= (one << (64 - 54));
-	if (text & (one << 45)) permutedText |= (one << (64 - 46));
-	if (text & (one << 44)) permutedText |= (one << (64 - 38));
-	if (text & (one << 43)) permutedText |= (one << (64 - 30));
-	if (text & (one << 42)) permutedText |= (one << (64 - 22));
-	if (text & (one << 41)) permutedText |= (one << (64 - 14));
-	if (text & (one << 40)) permutedText |= (one << (64 - 6));
-	if (text & (one << 39)) permutedText |= (one << (64 - 64));
-	if (text & (one << 38)) permutedText |= (one << (64 - 56));
-	if (text & (one << 37)) permutedText |= (one << (64 - 48));
-	if (text & (one << 36)) permutedText |= (one << (64 - 40));
-	if (text & (one << 35)) permutedText |= (one << (64 - 32));
-	if (text & (one << 34)) permutedText |= (one << (64 - 24));
-	if (text & (one << 33)) permutedText |= (one << (64 - 16));
-	if (text & (one << 32)) permutedText |= (one << (64 - 8));
-
-	if (text & (one << 31)) permutedText |= (one << (64 - 57));
-	if (text & (one << 30)) permutedText |= (one << (64 - 49));
-	if (text & (one << 29)) permutedText |= (one << (64 - 41));
-	if (text & (one << 28)) permutedText |= (one << (64 - 33));
-	if (text & (one << 27)) permutedText |= (one << (64 - 25));
-	if (text & (one << 26)) permutedText |= (one << (64 - 17));
-	if (text & (one << 25)) permutedText |= (one << (64 - 9));
-	if (text & (one << 24)) permutedText |= (one << (64 - 1));
-	if (text & (one << 23)) permutedText |= (one << (64 - 59));
-	if (text & (one << 22)) permutedText |= (one << (64 - 51));
-	if (text & (one << 21)) permutedText |= (one << (64 - 43));
-	if (text & (one << 20)) permutedText |= (one << (64 - 35));
-	if (text & (one << 19)) permutedText |= (one << (64 - 27));
-	if (text & (one << 18)) permutedText |= (one << (64 - 19));
-	if (text & (one << 17)) permutedText |= (one << (64 - 11));
-	if (text & (one << 16)) permutedText |= (one << (64 - 3));
-
-	if (text & (one << 15)) permutedText |= (one << (64 - 61));
-	if (text & (one << 14)) permutedText |= (one << (64 - 53));
-	if (text & (one << 13)) permutedText |= (one << (64 - 45));
-	if (text & (one << 12)) permutedText |= (one << (64 - 37));
-	if (text & (one << 11)) permutedText |= (one << (64 - 29));
-	if (text & (one << 10)) permutedText |= (one << (64 - 21));
-	if (text & (one << 9)) permutedText |= (one << (64 - 13));
-	if (text & (one << 8)) permutedText |= (one << (64 - 5));
-	if (text & (one << 7)) permutedText |= (one << (64 - 63));
-	if (text & (one << 6)) permutedText |= (one << (64 - 55));
-	if (text & (one << 5)) permutedText |= (one << (64 - 47));
-	if (text & (one << 4)) permutedText |= (one << (64 - 39));
-	if (text & (one << 3)) permutedText |= (one << (64 - 31));
-	if (text & (one << 2)) permutedText |= (one << (64 - 23));
-	if (text & (one << 1)) permutedText |= (one << (64 - 15));
-	if (text & (one << 0)) permutedText |= (one << (64 - 7));
-
-	return permutedText;
+	return garbage;
 }
