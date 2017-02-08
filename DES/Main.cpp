@@ -128,13 +128,154 @@ int main(int argc, char *argv[]) {
 		// the first block of our encrypted file needs to contain garbage on the left and the file size
 		// on the right. so we generate the garbage and then shift it to the left half and then OR with 
 		// it the size of the file
-		BIG firstBlock = garbageGenerator(4);
-		firstBlock = firstBlock << 32;
-		firstBlock |= length;
+		BIG block = garbageGenerator(4);
+		block = block << 32;
+		block |= length;
 
-		firstBlock = runDES(keyList, firstBlock);
+		block = runDES(keyList, block, encrypting);
+		char * buffer = new char[8];
 
-		outputStream.write((char*)firstBlock, sizeof(firstBlock));
+		buffer[0] = (block >> 56);
+		buffer[1] = (block >> 48);
+		buffer[2] = (block >> 40);
+		buffer[3] = (block >> 32);
+		buffer[4] = (block >> 24);
+		buffer[5] = (block >> 16);
+		buffer[6] = (block >> 8);
+		buffer[7] = block;
+
+		outputStream.write(buffer, 8);
+
+		// while there are full blocks left, read 8bytes, run des, write output
+
+		while (length > 7) {
+			inputStream.read(buffer, 8);
+			length -= 8;
+			block = 0;
+			block |= ((BIG)buffer[0] << 56);
+			block |= ((BIG)buffer[1] << 48);
+			block |= ((BIG)buffer[2] << 40);
+			block |= ((BIG)buffer[3] << 32);
+			block |= ((BIG)buffer[4] << 24);
+			block |= ((BIG)buffer[5] << 16);
+			block |= ((BIG)buffer[6] << 8);
+			block |= ((BIG)buffer[7]);
+
+			block = runDES(keyList, block, encrypting);
+
+			buffer[0] = (block >> 56);
+			buffer[1] = (block >> 48);
+			buffer[2] = (block >> 40);
+			buffer[3] = (block >> 32);
+			buffer[4] = (block >> 24);
+			buffer[5] = (block >> 16);
+			buffer[6] = (block >> 8);
+			buffer[7] = block;
+
+			outputStream.write(buffer, 8);
+		}
+
+		// if left over bytes generate garbage size 8 - leftover bytes, write output
+
+		if (length != 0) {
+			int garbageNeeded = 8 - length;
+			inputStream.read(buffer, length);
+			block = 0;
+			block |= ((BIG)buffer[0] << 56);
+			block |= ((BIG)buffer[1] << 48);
+			block |= ((BIG)buffer[2] << 40);
+			block |= ((BIG)buffer[3] << 32);
+			block |= ((BIG)buffer[4] << 24);
+			block |= ((BIG)buffer[5] << 16);
+			block |= ((BIG)buffer[6] << 8);
+			block |= ((BIG)buffer[7]);
+
+			block &= (0xffffffffffffffff << (length * 8));
+			block |= garbageGenerator(garbageNeeded);
+
+			buffer[0] = (block >> 56);
+			buffer[1] = (block >> 48);
+			buffer[2] = (block >> 40);
+			buffer[3] = (block >> 32);
+			buffer[4] = (block >> 24);
+			buffer[5] = (block >> 16);
+			buffer[6] = (block >> 8);
+			buffer[7] = block;
+
+			outputStream.write(buffer, 8);
+		}
+
+		delete buffer;
+	} else {
+		int length = 0;
+		char * buffer = new char[8];
+		inputStream.read(buffer, 8);
+
+		BIG block = 0;
+		block |= ((BIG)buffer[0] << 56);
+		block |= ((BIG)buffer[1] << 48);
+		block |= ((BIG)buffer[2] << 40);
+		block |= ((BIG)buffer[3] << 32);
+		block |= ((BIG)buffer[4] << 24);
+		block |= ((BIG)buffer[5] << 16);
+		block |= ((BIG)buffer[6] << 8);
+		block |= ((BIG)buffer[7]);
+
+		block = runDES(keyList, block, encrypting);
+
+		block &= 0xffffffff;
+		length = block;
+
+		while (length > 7) {
+			inputStream.read(buffer, 8);
+			length -= 8;
+			block = 0;
+			block |= ((BIG)buffer[0] << 56);
+			block |= ((BIG)buffer[1] << 48);
+			block |= ((BIG)buffer[2] << 40);
+			block |= ((BIG)buffer[3] << 32);
+			block |= ((BIG)buffer[4] << 24);
+			block |= ((BIG)buffer[5] << 16);
+			block |= ((BIG)buffer[6] << 8);
+			block |= ((BIG)buffer[7]);
+
+			block = runDES(keyList, block, encrypting);
+
+			buffer[0] = (block >> 56);
+			buffer[1] = (block >> 48);
+			buffer[2] = (block >> 40);
+			buffer[3] = (block >> 32);
+			buffer[4] = (block >> 24);
+			buffer[5] = (block >> 16);
+			buffer[6] = (block >> 8);
+			buffer[7] = block;
+
+			outputStream.write(buffer, 8);
+		}
+
+		if (length != 0) {
+			inputStream.read(buffer, length);
+			block = 0;
+			block |= ((BIG)buffer[0] << 56);
+			block |= ((BIG)buffer[1] << 48);
+			block |= ((BIG)buffer[2] << 40);
+			block |= ((BIG)buffer[3] << 32);
+			block |= ((BIG)buffer[4] << 24);
+			block |= ((BIG)buffer[5] << 16);
+			block |= ((BIG)buffer[6] << 8);
+			block |= ((BIG)buffer[7]);
+
+			buffer[0] = (block >> 56);
+			buffer[1] = (block >> 48);
+			buffer[2] = (block >> 40);
+			buffer[3] = (block >> 32);
+			buffer[4] = (block >> 24);
+			buffer[5] = (block >> 16);
+			buffer[6] = (block >> 8);
+			buffer[7] = block;
+
+			outputStream.write(buffer, length);
+		}
 
 	}
 
