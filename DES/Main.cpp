@@ -93,8 +93,11 @@ int main(int argc, char *argv[]) {
 
 	// now we need to check that the mode is ecb or cbc
 	bool isCBC;
-	if (_stricmp(argv[3], "cbc") == 0)
+	if (_stricmp(argv[3], "cbc") == 0) {
 		isCBC = true;
+		cout << "Sorry this functionality is not available yet." << endl;
+		return 1;
+	}
 	else if (_stricmp(argv[3], "ecb") == 0)
 		isCBC = false;
 	else {
@@ -138,11 +141,16 @@ int main(int argc, char *argv[]) {
 		block |= length;
 
 		// now that we have generated the first block we need to run des on it and then perform an
-		// endian swap before we write the value to the file
+		// endian swap before we write the value to the file since just casting the block leaves them
+		// in reverse order.
 		block = runDES(keyList, block, encrypting);
 		block = _byteswap_uint64(block);
 		outputStream.write((const char *)&block, 8);
 
+		// now we will run DES on all of the remaining blocks in the file until we reach the last
+		// potential block. I say potential because once we have fewer than 8 bytes left, either the
+		// file is exactly a multiple of 8 bytes long and we're done, or there are 1-7 bytes left
+		// that require some padding to be encrypted. we also run into the endian issue here again
 		while (length > 7) {
 			inputStream.read(buffer, 8);
 			length -= 8;
@@ -152,8 +160,10 @@ int main(int argc, char *argv[]) {
 			outputStream.write((const char *)&block, 8);
 		}
 
+		// if the length is non zero here then we need some garbage bytes for padding at the end
+		// of the file. we can just fill each byte left over in the buffer with garbage to get
+		// the padding required
 		if (length != 0) {
-			int garbageNeeded = 8 - length;
 			inputStream.read(buffer, length);
 
 			do {
@@ -161,6 +171,8 @@ int main(int argc, char *argv[]) {
 				length++;
 			} while (length < 8);
 
+			// now that the padding has been inserted we just run DES and write the output once the
+			// needed endian swap is performed
 			block = _byteswap_uint64(*(BIG*)buffer);
 			block = runDES(keyList, block, encrypting);
 			block = _byteswap_uint64(block);
@@ -168,17 +180,29 @@ int main(int argc, char *argv[]) {
 		}
 
 	} else {
+		// if we reach this section then we are decrypting an encrypted file. we can find the
+		// actual length of the file by decrypting the first block and reading the value in the
+		// right half of the block. we need to know this value because we have added 8-15 bytes
+		// of padding to the encrypted file.
 		int actualLength = 0;
 		inputStream.read(buffer, 8);
 		BIG block = _byteswap_uint64(*(BIG*)buffer);
 		block = runDES(keyList, block, encrypting);
 		block &= 0xffffffff;
 		actualLength = block;
-		if (!(length - actualLength < 16 && length - actualLength > 0)) {
+
+		// this step here is more of a debugging step than anything but it also stops the program
+		// from getting stuck decrypting if the file lacks the required size field. since we added
+		// those 8-15 padding bits the length of the file should be within that range. if it is not
+		// the program lets the user know and then ends
+		if (!(length - actualLength < 16 && length - actualLength > 7)) {
 			cout << "Size encryption error." << endl;
 			return 1;
 		}
 
+		// once we get here we know that we have a valid file and can start decrypting each block of
+		// the input file. this works the same as the encrpting except the boolean that we pass in
+		// is false rather than true
 		while (actualLength > 7) {
 			inputStream.read(buffer, 8);
 			actualLength -= 8;
@@ -188,6 +212,8 @@ int main(int argc, char *argv[]) {
 			outputStream.write((const char *)&block, 8);
 		}
 
+		// if we still have bytes left to decrypt it will be 7 or less. by only writing up to the
+		// actual length any extra garbage is chopoped off
 		if (actualLength != 0) {
 			inputStream.read(buffer, 8);
 			block = _byteswap_uint64(*(BIG*)buffer);
@@ -195,7 +221,6 @@ int main(int argc, char *argv[]) {
 			block = _byteswap_uint64(block);
 			outputStream.write((const char *)&block, actualLength);
 		}
-
 		
 	}
 
@@ -212,6 +237,9 @@ static BIG garbageGenerator(int bytesRequired) {
 
 	BIG garbage = 0;
 
+	// this section generates a byte of garbage and ORs it with the 64 bit value.
+	// then if we need another byte we shift the garbage one byte left to make
+	// room for the next byte coming in
 	while (bytesRequired > 0) {
 		garbage = garbage << 8;
 		garbage |= rand() % 256;

@@ -2,7 +2,9 @@
 #include "Utils.h"
 #include <iostream>
 
-// this is a 
+// this is a precomputed list of sbox outputs that acts as a dictionary for the 8 s boxes.
+// the first dimension of the array selects the s box and the second accepts a 6 bit value 
+// and is used to select the 4 bit output
 static const unsigned char s_box_substitution[8][64] = {
 	{
 		14, 0, 4, 15, 13, 7, 1, 4, 2, 14, 15, 2, 11, 13, 8, 1, 3, 10, 10, 6, 6, 12, 12, 11, 5, 9, 9, 5, 0, 3, 7, 8,
@@ -38,6 +40,8 @@ static const unsigned char s_box_substitution[8][64] = {
 	},
 };
 
+// these functions are declared static to promote the use of inlining which should
+// improve run time
 static BIG initialPermutation(BIG block);
 static BIG finalPermutation(BIG block);
 static BIG blockExpansionPBox32_48(BIG block);
@@ -49,16 +53,8 @@ static BIG round(BIG key, BIG block);
 //
 // initial permutation
 // round 1-16
+// swap right and left halves
 // final permutation
-//
-// round_i details
-//	right half
-//		sent through expansion p box
-//		XORed with key_i
-//		result sent through s box array
-//		then through straight p box
-//		result is XORed with left half to become right half
-//		right half becomes left half
 BIG runDES(BIG keys[], BIG block, bool encrypting) {
 
 	block = initialPermutation(block);
@@ -109,9 +105,17 @@ BIG runDES(BIG keys[], BIG block, bool encrypting) {
 	return block;
 };
 
+// round_i details
+//	right half
+//		sent through expansion p box
+//		XORed with key_i
+//		result sent through s box array
+//		then through straight p box
+//		result is XORed with left half to become right half
+//		right half becomes left half
 static BIG round(BIG key, BIG block) {
 
-	BIG rightHalf = (block & 0xffffffff);
+	BIG rightHalf = (block & 0xffffffff); // masking is used to clear bits 1-32(1 is MSB)
 	BIG leftHalf = ((block >> 32) & 0xffffffff);
 	BIG expandedRight = blockExpansionPBox32_48(rightHalf);
 	expandedRight = (expandedRight ^ key) & 0xffffffffffff;
@@ -129,6 +133,7 @@ static BIG round(BIG key, BIG block) {
 	return block;
 }
 
+// the straight p box just switches the order of the input bits
 static BIG straightPBox32_32(BIG halfBlock) {
 	BIG one = 1;
 	BIG permutedBlock = 0;
@@ -170,9 +175,16 @@ static BIG straightPBox32_32(BIG halfBlock) {
 	return permutedBlock;
 }
 
+// this section is used to substitute 6 bit sections to 4 bit sections of
+// a 48 bit value resulting in a 32 bit output
 static BIG sBoxes48_32(BIG expandedHalf) {
 	BIG mask6 = 0x3f;
 	BIG halfBlock = 0;
+
+	// we select the correct output of the s box by isolating the corresponding 6 bits
+	// of the expanded half and ORing them with the empty half block. once substitution
+	// is made we shift the block over to make room for the next 4 bits until we reach
+	// the last substitution
 	halfBlock |= s_box_substitution[0][(expandedHalf >> 42) & mask6];
 	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[1][(expandedHalf >> 36) & mask6];
@@ -193,7 +205,8 @@ static BIG sBoxes48_32(BIG expandedHalf) {
 }
 
 // the basics of the permutation are commented in KeyGen.cpp.
-// please refer to keyPBox64_56 to understand how this aspect works
+// please refer to keyPBox64_56 to understand how this aspect works.
+// this acts as a straight p box
 static BIG initialPermutation(BIG block) {
 	BIG one = 1;
 	BIG permutedBlock = 0;
