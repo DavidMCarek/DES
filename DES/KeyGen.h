@@ -1,4 +1,4 @@
 #pragma once
 #include "Macros.h"
 
-BIG * generateKeys(BIG inKey);
+void generateKeys(BIG inKey, BIG * keys);

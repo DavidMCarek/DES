@@ -7,11 +7,9 @@ static BIG rotateAndJoinKeys(BIG keyA, BIG keyB, int round, BIG mask);
 static BIG keyCompressionPBox64_56(BIG key);
 static BIG keyCompressionPBox56_48(BIG key);
 
-BIG * generateKeys(BIG inKey) {
-	// first we will set up the array that the keys will be sent back in
-	BIG keyList[16] = {};
+void generateKeys(BIG inKey, BIG * keys) {
 	
-	// then we will run our 64 bit key through the compression p box to get the required 56 bit key.
+	// first we will run our 64 bit key through the compression p box to get the required 56 bit key.
 	// the least significant 8 bits will be empty
 	BIG compKey = keyCompressionPBox64_56(inKey);
 
@@ -27,11 +25,8 @@ BIG * generateKeys(BIG inKey) {
 		keyA = ((rotKey >> 28) & mask28);
 		keyB = (rotKey & mask28);
 		rotKey = rotateAndJoinKeys(keyA, keyB, round, mask28);
-		keyList[round - 1] = keyCompressionPBox56_48(rotKey);
+		keys[round - 1] = keyCompressionPBox56_48(rotKey);
 	}
-
-
-	return keyList;
 }
 
 static BIG rotateAndJoinKeys(BIG keyA, BIG keyB, int round, BIG mask) {

@@ -1,39 +1,41 @@
 #include "DES.h"
+#include "Utils.h"
+#include <iostream>
 
 // this is a 
-static const unsigned char s_box_substitution[8][64] = { 
-	{ 
+static const unsigned char s_box_substitution[8][64] = {
+	{
 		14, 0, 4, 15, 13, 7, 1, 4, 2, 14, 15, 2, 11, 13, 8, 1, 3, 10, 10, 6, 6, 12, 12, 11, 5, 9, 9, 5, 0, 3, 7, 8,
-		4, 15, 1, 12, 14, 8, 8, 2, 13, 4, 6, 9, 2, 1, 11, 7, 15, 5, 12, 11, 9, 3, 7, 14, 3, 10, 10, 0, 5, 6, 0, 13, 
+		4, 15, 1, 12, 14, 8, 8, 2, 13, 4, 6, 9, 2, 1, 11, 7, 15, 5, 12, 11, 9, 3, 7, 14, 3, 10, 10, 0, 5, 6, 0, 13,
 	},
-	{ 
+	{
 		15, 3, 1, 13, 8, 4, 14, 7, 6, 15, 11, 2, 3, 8, 4, 14, 9, 12, 7, 0, 2, 1, 13, 10, 12, 6, 0, 9, 5, 11, 10, 5,
-		0, 13, 14, 8, 7, 10, 11, 1, 10, 3, 4, 15, 13, 4, 1, 2, 5, 11, 8, 6, 12, 7, 6, 12, 9, 0, 3, 5, 2, 14, 15, 9, 
+		0, 13, 14, 8, 7, 10, 11, 1, 10, 3, 4, 15, 13, 4, 1, 2, 5, 11, 8, 6, 12, 7, 6, 12, 9, 0, 3, 5, 2, 14, 15, 9,
 	},
-	{ 
+	{
 		10, 13, 0, 7, 9, 0, 14, 9, 6, 3, 3, 4, 15, 6, 5, 10, 1, 2, 13, 8, 12, 5, 7, 14, 11, 12, 4, 11, 2, 15, 8, 1,
-		13, 1, 6, 10, 4, 13, 9, 0, 8, 6, 15, 9, 3, 8, 0, 7, 11, 4, 1, 15, 2, 14, 12, 3, 5, 11, 10, 5, 14, 2, 7, 12, 
+		13, 1, 6, 10, 4, 13, 9, 0, 8, 6, 15, 9, 3, 8, 0, 7, 11, 4, 1, 15, 2, 14, 12, 3, 5, 11, 10, 5, 14, 2, 7, 12,
 	},
-	{ 
+	{
 		7, 13, 13, 8, 14, 11, 3, 5, 0, 6, 6, 15, 9, 0, 10, 3, 1, 4, 2, 7, 8, 2, 5, 12, 11, 1, 12, 10, 4, 14, 15, 9,
-		10, 3, 6, 15, 9, 0, 0, 6, 12, 10, 11, 1, 7, 13, 13, 8, 15, 9, 1, 4, 3, 5, 14, 11, 5, 12, 2, 7, 8, 2, 4, 14, 
+		10, 3, 6, 15, 9, 0, 0, 6, 12, 10, 11, 1, 7, 13, 13, 8, 15, 9, 1, 4, 3, 5, 14, 11, 5, 12, 2, 7, 8, 2, 4, 14,
 	},
-	{ 
+	{
 		2, 14, 12, 11, 4, 2, 1, 12, 7, 4, 10, 7, 11, 13, 6, 1, 8, 5, 5, 0, 3, 15, 15, 10, 13, 3, 0, 9, 14, 8, 9, 6,
-		4, 11, 2, 8, 1, 12, 11, 7, 10, 1, 13, 14, 7, 2, 8, 13, 15, 6, 9, 15, 12, 0, 5, 9, 6, 10, 3, 4, 0, 5, 14, 3, 
+		4, 11, 2, 8, 1, 12, 11, 7, 10, 1, 13, 14, 7, 2, 8, 13, 15, 6, 9, 15, 12, 0, 5, 9, 6, 10, 3, 4, 0, 5, 14, 3,
 	},
-	{ 
+	{
 		12, 10, 1, 15, 10, 4, 15, 2, 9, 7, 2, 12, 6, 9, 8, 5, 0, 6, 13, 1, 3, 13, 4, 14, 14, 0, 7, 11, 5, 3, 11, 8,
-		9, 4, 14, 3, 15, 2, 5, 12, 2, 9, 8, 5, 12, 15, 3, 10, 7, 11, 0, 14, 4, 1, 10, 7, 1, 6, 13, 0, 11, 8, 6, 13, 
+		9, 4, 14, 3, 15, 2, 5, 12, 2, 9, 8, 5, 12, 15, 3, 10, 7, 11, 0, 14, 4, 1, 10, 7, 1, 6, 13, 0, 11, 8, 6, 13,
 	},
-	{ 
+	{
 		4, 13, 11, 0, 2, 11, 14, 7, 15, 4, 0, 9, 8, 1, 13, 10, 3, 14, 12, 3, 9, 5, 7, 12, 5, 2, 10, 15, 6, 8, 1, 6,
-		1, 6, 4, 11, 11, 13, 13, 8, 12, 1, 3, 4, 7, 10, 14, 7, 10, 9, 15, 5, 6, 0, 8, 15, 0, 14, 5, 2, 9, 3, 2, 12, 
+		1, 6, 4, 11, 11, 13, 13, 8, 12, 1, 3, 4, 7, 10, 14, 7, 10, 9, 15, 5, 6, 0, 8, 15, 0, 14, 5, 2, 9, 3, 2, 12,
 	},
-	{ 
+	{
 		13, 1, 2, 15, 8, 13, 4, 8, 6, 10, 15, 3, 11, 7, 1, 4, 10, 12, 9, 5, 3, 6, 14, 11, 5, 0, 0, 14, 12, 9, 7, 2,
-		7, 2, 11, 1, 4, 14, 1, 7, 9, 4, 12, 10, 14, 8, 2, 13, 0, 15, 6, 12, 10, 9, 13, 0, 15, 3, 3, 5, 5, 6, 8, 11, 
-	}, 
+		7, 2, 11, 1, 4, 14, 1, 7, 9, 4, 12, 10, 14, 8, 2, 13, 0, 15, 6, 12, 10, 9, 13, 0, 15, 3, 3, 5, 5, 6, 8, 11,
+	},
 };
 
 static BIG initialPermutation(BIG block);
@@ -41,6 +43,7 @@ static BIG finalPermutation(BIG block);
 static BIG blockExpansionPBox32_48(BIG block);
 static BIG sBoxes48_32(BIG expandedHalf);
 static BIG straightPBox32_32(BIG halfBlock);
+static BIG round(BIG key, BIG block);
 
 // this method runs all of the internals to DES in the order listed below
 //
@@ -59,279 +62,72 @@ static BIG straightPBox32_32(BIG halfBlock);
 BIG runDES(BIG keys[], BIG block, bool encrypting) {
 
 	block = initialPermutation(block);
-	BIG mask48 = 0xffffffffffff;
-	BIG mask32 = 0xffffffff;
-	BIG rightHalf = block & mask32;
-	BIG tempLeftHalf;
-	BIG leftHalf = block >> 32;
 
 	if (encrypting) {
-
-		BIG expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[0]) & mask48;
-		BIG halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[1]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[2]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[3]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[4]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[5]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[6]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[7]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[8]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[9]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[10]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[11]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[12]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[13]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[14]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[15]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-
+		block = round(keys[0], block);
+		block = round(keys[1], block);
+		block = round(keys[2], block);
+		block = round(keys[3], block);
+		block = round(keys[4], block);
+		block = round(keys[5], block);
+		block = round(keys[6], block);
+		block = round(keys[7], block);
+		block = round(keys[8], block);
+		block = round(keys[9], block);
+		block = round(keys[10], block);
+		block = round(keys[11], block);
+		block = round(keys[12], block);
+		block = round(keys[13], block);
+		block = round(keys[14], block);
+		block = round(keys[15], block);
 	} else {
-
-		BIG expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[15]) & mask48;
-		BIG halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[14]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[13]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[12]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[11]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[10]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[9]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[8]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[7]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[6]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[5]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[4]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[3]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[2]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[1]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
-
-		expandedRight = blockExpansionPBox32_48(rightHalf);
-		expandedRight = (expandedRight ^ keys[0]) & mask48;
-		halfBlock = sBoxes48_32(expandedRight);
-		halfBlock = straightPBox32_32(halfBlock);
-		tempLeftHalf = rightHalf;
-		rightHalf = leftHalf ^ halfBlock;
-		leftHalf = tempLeftHalf;
+		block = round(keys[15], block);
+		block = round(keys[14], block);
+		block = round(keys[13], block);
+		block = round(keys[12], block);
+		block = round(keys[11], block);
+		block = round(keys[10], block);
+		block = round(keys[9], block);
+		block = round(keys[8], block);
+		block = round(keys[7], block);
+		block = round(keys[6], block);
+		block = round(keys[5], block);
+		block = round(keys[4], block);
+		block = round(keys[3], block);
+		block = round(keys[2], block);
+		block = round(keys[1], block);
+		block = round(keys[0], block);
 	}
 
+	BIG swapBlock = 0;
+	swapBlock |= ((block >> 32) & 0xffffffff);
+	swapBlock |= ((block << 32) & 0xffffffff00000000);
+	block = swapBlock;
 
 	block = finalPermutation(block);
 
 	return block;
 };
+
+static BIG round(BIG key, BIG block) {
+
+	BIG rightHalf = (block & 0xffffffff);
+	BIG leftHalf = ((block >> 32) & 0xffffffff);
+	BIG expandedRight = blockExpansionPBox32_48(rightHalf);
+	expandedRight = (expandedRight ^ key) & 0xffffffffffff;
+	BIG halfBlock = sBoxes48_32(expandedRight);
+	halfBlock = straightPBox32_32(halfBlock);
+	BIG tempLeftHalf = rightHalf;
+	rightHalf = leftHalf ^ halfBlock;
+	leftHalf = tempLeftHalf;
+
+	block = 0;
+	block |= leftHalf;
+	block <<= 32;
+	block |= rightHalf;
+
+	return block;
+}
 
 static BIG straightPBox32_32(BIG halfBlock) {
 	BIG one = 1;
@@ -353,6 +149,7 @@ static BIG straightPBox32_32(BIG halfBlock) {
 	if (halfBlock & (one << 18)) permutedBlock |= (one << (32 - 20));
 	if (halfBlock & (one << 17)) permutedBlock |= (one << (32 - 10));
 	if (halfBlock & (one << 16)) permutedBlock |= (one << (32 - 1));
+
 	if (halfBlock & (one << 15)) permutedBlock |= (one << (32 - 8));
 	if (halfBlock & (one << 14)) permutedBlock |= (one << (32 - 14));
 	if (halfBlock & (one << 13)) permutedBlock |= (one << (32 - 25));
@@ -377,21 +174,20 @@ static BIG sBoxes48_32(BIG expandedHalf) {
 	BIG mask6 = 0x3f;
 	BIG halfBlock = 0;
 	halfBlock |= s_box_substitution[0][(expandedHalf >> 42) & mask6];
-	halfBlock << 6;
+	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[1][(expandedHalf >> 36) & mask6];
-	halfBlock << 6;
+	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[2][(expandedHalf >> 30) & mask6];
-	halfBlock << 6;
+	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[3][(expandedHalf >> 24) & mask6];
-	halfBlock << 6;
+	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[4][(expandedHalf >> 18) & mask6];
-	halfBlock << 6;
+	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[5][(expandedHalf >> 12) & mask6];
-	halfBlock << 6;
+	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[6][(expandedHalf >> 6) & mask6];
-	halfBlock << 6;
+	halfBlock <<= 4;
 	halfBlock |= s_box_substitution[7][(expandedHalf >> 0) & mask6];
-	halfBlock << 6;
 
 	return halfBlock;
 }
