@@ -1,3 +1,10 @@
+// EECS 4980:805 Inside Cryptography
+// DES Project
+// David Carek
+
+// This file is the main control for running DES. It reads and validates input parameters, reads from the input file, 
+// calls the run DES function, and writes to the output file.
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -114,10 +121,12 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	// since the file is valid we find its length
 	inputStream.seekg(0, inputStream.end);
 	unsigned int length = inputStream.tellg();
 	inputStream.seekg(0, inputStream.beg);
 
+	// then we make sure we can open the output file
 	ofstream outputStream;
 	outputStream.open(argv[5], std::ios::binary);
 	if (outputStream.fail()) {

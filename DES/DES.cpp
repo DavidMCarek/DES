@@ -1,3 +1,11 @@
+// EECS 4980:805 Inside Cryptography
+// DES Project
+// David Carek
+
+// This file contains all of the internal functions required to run DES. This includes all of 
+// the s boxes and p boxes. The run DES function contains all of the high level function calls
+// of DES
+
 #include "DES.h"
 #include "Utils.h"
 #include <iostream>

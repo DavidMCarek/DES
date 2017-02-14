@@ -1,3 +1,9 @@
+// EECS 4980:805 Inside Cryptography
+// DES Project
+// David Carek
+
+// This file contains tools that are useful for debugging.
+
 #include "Utils.h"
 #include <stdio.h>
 

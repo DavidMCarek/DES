@@ -1,3 +1,11 @@
+// EECS 4980:805 Inside Cryptography
+// DES Project
+// David Carek
+
+// This file contains all of the functions required to generate the 16 keys for the rounds of DES.
+// The needed internal functions are the 2 p boxes and they key half rotations. The generate keys
+// function is called externally to provide the keys.
+
 #include "KeyGen.h"
 #include "Macros.h"
 #include <string.h>
@@ -66,7 +74,9 @@ static BIG keyCompressionPBox64_56(BIG key) {
 	// if we take a 1 and shift it 63 bits left we will be at the MSB. we can
 	// decrement from there util we reach the LSB. if we subtract the new 
 	// bit position from 64 we get the correct amount of bits required to 
-	// shift for the permutation.
+	// shift for the permutation. If the bit that we are currently looking at
+	// is on in the key we turn on the corresponding permuted bit in the 
+	// compressed key. 
 	
 	if (key & (one << 63)) compressedKey |= (one << (56 - 8));
 	if (key & (one << 62)) compressedKey |= (one << (56 - 16));
