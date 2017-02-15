@@ -115,6 +115,28 @@ int main(int argc, char *argv[]) {
 	ifstream inputStream;
 	inputStream.open(argv[4], std::ios::binary);
 
+	// this next little section is for encrypting bitmaps. i thought it would be interesting to see 
+	// how an encrypted image turns out. so for our purposes we dont care about its decryption so
+	// wont implement that functionality. also i suspect that cbc will provide a very different 
+	// looking image. first we find the end of the string so we can check the last 4 characters. this 
+	// will make sure that the file extension is '.bmp'
+	bool endOfString = false;
+	int strLoc = 0;
+	while (!endOfString) {
+		if (argv[4][strLoc] == '\0')
+			endOfString = true;
+		else
+			strLoc++;
+	}
+	// if we read in a bmp we need to ignore the first 14 bytes which are the header
+	bool isBMP = false;
+	if (argv[4][strLoc - 4] == '.' &&
+		argv[4][strLoc - 3] == 'b' &&
+		argv[4][strLoc - 2] == 'm' &&
+		argv[4][strLoc - 1] == 'p')
+		isBMP = true;
+
+
 	// if we couldn't open the file, let the user know and return
 	if (inputStream.fail()) {
 		cout << "Could not open input file" << endl;
@@ -145,16 +167,27 @@ int main(int argc, char *argv[]) {
 	// if we're encrypting we will need to generate garbage for the left half of the first block and
 	// the length of the file will be located in the right half of that block
 	if (encrypting) {
-		BIG block = garbageGenerator(4);
-		block = block << 32;
-		block |= length;
+		BIG block;
+		// if we are encrypting a bitmap we need to leave the first 14 bytes alone because those
+		// are the header bytes
+		if (isBMP) {
+			char * bmpBuffer = new char[54];
+			inputStream.read(bmpBuffer, 54);
+			outputStream.write(bmpBuffer, 54);
+			length -= 54;
+		}
+		else {
+			block = garbageGenerator(4);
+			block = block << 32;
+			block |= length;
 
-		// now that we have generated the first block we need to run des on it and then perform an
-		// endian swap before we write the value to the file since just casting the block leaves them
-		// in reverse order.
-		block = runDES(keyList, block, encrypting);
-		block = _byteswap_uint64(block);
-		outputStream.write((const char *)&block, 8);
+			// now that we have generated the first block we need to run des on it and then perform an
+			// endian swap before we write the value to the file since just casting the block leaves them
+			// in reverse order.
+			block = runDES(keyList, block, encrypting);
+			block = _byteswap_uint64(block);
+			outputStream.write((const char *)&block, 8);
+		}
 
 		// now we will run DES on all of the remaining blocks in the file until we reach the last
 		// potential block. I say potential because once we have fewer than 8 bytes left, either the
@@ -187,6 +220,8 @@ int main(int argc, char *argv[]) {
 			block = _byteswap_uint64(block);
 			outputStream.write((const char *)&block, 8);
 		}
+		
+		
 
 	} else {
 		// if we reach this section then we are decrypting an encrypted file. we can find the
