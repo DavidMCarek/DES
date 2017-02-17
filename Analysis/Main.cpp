@@ -354,14 +354,14 @@ int main(int argc, char* argv[]) {
 	BIG offBits = (originalLength * 8) - onBits;
 
 	// all recorded metrics are then printed to the console and then the analysis is done
-	cout << "On bits: " << onBits << " Off bits: " << offBits << endl << endl;
-
-	cout << "Byte frequencies: " << endl;
+	cout << "Bit counts:" << endl << "On bits, Off bits" << endl << onBits << ", " << offBits << endl << endl;
+	cout << "Byte frequencies: " << endl << "Byte value, Byte frequencies" << endl;
 	for (int i = 0; i < 256; i++) {
-		cout << byteFrequencies[i] << endl;
+		printf("0x%02X", i);
+		cout << ", " << byteFrequencies[i] << endl;
 	}
 
-	cout << endl << "Digram frequencies: " << endl;
+	cout << endl << "Digram frequencies: " << endl << "Digram value, Digram frequencies" << endl;
 
 	// we exclude results that have 0 as a frequency count for digrams and octets
 	// to save file space. for the trigrams we exclude counts of just 1 or 0 for
@@ -369,23 +369,26 @@ int main(int argc, char* argv[]) {
 	// all of the data.
 
 	for (int i = 0; i < 65535; i++) {
-		if (digramFrequencies[i] != 0)
-			cout << digramFrequencies[i] << endl;
+		if (digramFrequencies[i] != 0) {
+			printf("0x%04X", i);
+			cout << ", " << digramFrequencies[i] << endl;
+		}
 	}
 
-	cout << endl << "Trigram frequencies: " << endl;
+	cout << endl << "Trigram frequencies: " << endl << "Trigram value, Trigram frequencies" << endl;
 
 	for (int i = 0; i < 16777215; i++) {
-		if (trigramFrequencies[i] > 1)
-			cout << trigramFrequencies[i] << endl;
+		if (trigramFrequencies[i] > 1) {
+			printf("0x%06X", i);
+			cout <<  ", " << trigramFrequencies[i] << endl;
+		}
 	}
 
-	cout << endl << "Octet frequencies: " << endl;
+	cout << endl << "Octet frequencies: " << endl << "Octet value, Octet frequencies" << endl;
 	
-	int i = 0;
 	for (pair<BIG, int> pair : octetMap) {
-		cout << pair.second << endl;
-		i++;
+		printf("0x%06X", pair.first);
+		cout << ", " << pair.second << endl;
 	}
 
 	return 0;
