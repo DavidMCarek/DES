@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <time.h>
 
 #include "KeyGen.h"
 #include "Macros.h"
@@ -102,8 +103,6 @@ int main(int argc, char *argv[]) {
 	bool isCBC;
 	if (_stricmp(argv[3], "cbc") == 0) {
 		isCBC = true;
-		cout << "Sorry this functionality is not available yet." << endl;
-		return 1;
 	}
 	else if (_stricmp(argv[3], "ecb") == 0)
 		isCBC = false;
@@ -167,7 +166,20 @@ int main(int argc, char *argv[]) {
 	// if we're encrypting we will need to generate garbage for the left half of the first block and
 	// the length of the file will be located in the right half of that block
 	if (encrypting) {
+
+		BIG iv;
+		BIG previousBlock;
 		BIG block;
+
+		// if we're in cbc mode we have to generate our IV, encrypt it with ecb, and write it.
+		if (isCBC) {
+			block = garbageGenerator(8);
+			iv = block;
+			block = runDES(keyList, block, encrypting);
+			block = _byteswap_uint64(block);
+			outputStream.write((const char *)&block, 8);
+		}
+
 		// if we are encrypting a bitmap we need to leave the first 14 bytes alone because those
 		// are the header bytes
 		if (isBMP) {
@@ -175,16 +187,20 @@ int main(int argc, char *argv[]) {
 			inputStream.read(bmpBuffer, 54);
 			outputStream.write(bmpBuffer, 54);
 			length -= 54;
-		}
-		else {
+		} else {
 			block = garbageGenerator(4);
 			block = block << 32;
 			block |= length;
+
+			// if we're in cbc mode we need to XOR the previous block with the current one before we encrypt it
+			if (isCBC)
+				block ^= iv;
 
 			// now that we have generated the first block we need to run des on it and then perform an
 			// endian swap before we write the value to the file since just casting the block leaves them
 			// in reverse order.
 			block = runDES(keyList, block, encrypting);
+			previousBlock = block;
 			block = _byteswap_uint64(block);
 			outputStream.write((const char *)&block, 8);
 		}
@@ -197,7 +213,11 @@ int main(int argc, char *argv[]) {
 			inputStream.read(buffer, 8);
 			length -= 8;
 			block = _byteswap_uint64(*(BIG*)buffer);
+			// if we're in cbc mode we need to XOR the previous block with the current one before we encrypt it
+			if (isCBC)
+				block ^= previousBlock;
 			block = runDES(keyList, block, encrypting);
+			previousBlock = block;
 			block = _byteswap_uint64(block);
 			outputStream.write((const char *)&block, 8);
 		}
@@ -216,6 +236,9 @@ int main(int argc, char *argv[]) {
 			// now that the padding has been inserted we just run DES and write the output once the
 			// needed endian swap is performed
 			block = _byteswap_uint64(*(BIG*)buffer);
+			// if we're in cbc mode we need to XOR the previous block with the current one before we encrypt it
+			if (isCBC)
+				block ^= previousBlock;
 			block = runDES(keyList, block, encrypting);
 			block = _byteswap_uint64(block);
 			outputStream.write((const char *)&block, 8);
@@ -224,34 +247,58 @@ int main(int argc, char *argv[]) {
 		
 
 	} else {
+		BIG tempBlock;
+		BIG block;
+		BIG previousBlock;
+
+		if (isCBC) {
+			inputStream.read(buffer, 8);
+			block = _byteswap_uint64(*(BIG*)buffer);
+			tempBlock = runDES(keyList, block, encrypting);
+		}
+
 		// if we reach this section then we are decrypting an encrypted file. we can find the
 		// actual length of the file by decrypting the first block and reading the value in the
 		// right half of the block. we need to know this value because we have added 8-15 bytes
 		// of padding to the encrypted file.
 		int actualLength = 0;
 		inputStream.read(buffer, 8);
-		BIG block = _byteswap_uint64(*(BIG*)buffer);
+		block = _byteswap_uint64(*(BIG*)buffer);
+		previousBlock = block;
 		block = runDES(keyList, block, encrypting);
+		if (isCBC)
+			block ^= tempBlock;
 		block &= 0xffffffff;
 		actualLength = block;
 
 		// this step here is more of a debugging step than anything but it also stops the program
 		// from getting stuck decrypting if the file lacks the required size field. since we added
 		// those 8-15 padding bits the length of the file should be within that range. if it is not
-		// the program lets the user know and then ends
-		if (!(length - actualLength < 16 && length - actualLength > 7)) {
-			cout << "Size encryption error." << endl;
-			return 1;
-		}
+		// the program lets the user know and then ends. if we use cbc the encrypted file will have 
+		// an extra 8 bytes on top of the 8-15 bytes.
+		if (!isCBC)
+			if (!(length - actualLength < 16 && length - actualLength > 7)) {
+				cout << "Size encryption error." << endl;
+				return 1;
+			}
+		else
+			if (!(length - actualLength < 24 && length - actualLength > 15)) {
+				cout << "Size encryption error." << endl;
+				return 1;
+			}
 
 		// once we get here we know that we have a valid file and can start decrypting each block of
 		// the input file. this works the same as the encrpting except the boolean that we pass in
 		// is false rather than true
 		while (actualLength > 7) {
+			tempBlock = previousBlock;
 			inputStream.read(buffer, 8);
 			actualLength -= 8;
-			BIG block = _byteswap_uint64(*(BIG*)buffer);
+			block = _byteswap_uint64(*(BIG*)buffer);
+			previousBlock = block;
 			block = runDES(keyList, block, encrypting);
+			if (isCBC)
+				block ^= tempBlock;
 			block = _byteswap_uint64(block);
 			outputStream.write((const char *)&block, 8);
 		}
@@ -262,6 +309,8 @@ int main(int argc, char *argv[]) {
 			inputStream.read(buffer, 8);
 			block = _byteswap_uint64(*(BIG*)buffer);
 			block = runDES(keyList, block, encrypting);
+			if (isCBC)
+				block ^= previousBlock;
 			block = _byteswap_uint64(block);
 			outputStream.write((const char *)&block, actualLength);
 		}
@@ -280,6 +329,7 @@ int main(int argc, char *argv[]) {
 static BIG garbageGenerator(int bytesRequired) {
 
 	BIG garbage = 0;
+	srand(time(0)); // seed rand with the current time
 
 	// this section generates a byte of garbage and ORs it with the 64 bit value.
 	// then if we need another byte we shift the garbage one byte left to make
