@@ -177,7 +177,8 @@ int main(int argc, char *argv[]) {
 			iv = block;
 			block = runDES(keyList, block, encrypting);
 			block = _byteswap_uint64(block);
-			outputStream.write((const char *)&block, 8);
+			if (!isBMP)
+				outputStream.write((const char *)&block, 8);
 		}
 
 		// if we are encrypting a bitmap we need to leave the first 14 bytes alone because those
@@ -187,6 +188,8 @@ int main(int argc, char *argv[]) {
 			inputStream.read(bmpBuffer, 54);
 			outputStream.write(bmpBuffer, 54);
 			length -= 54;
+			if (isCBC)
+				previousBlock = iv;
 		} else {
 			block = garbageGenerator(4);
 			block = block << 32;

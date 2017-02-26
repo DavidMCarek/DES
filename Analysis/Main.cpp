@@ -387,7 +387,7 @@ int main(int argc, char* argv[]) {
 	cout << endl << "Octet frequencies: " << endl << "Octet value, Octet frequencies" << endl;
 	
 	for (pair<BIG, int> pair : octetMap) {
-		printf("0x%06X", pair.first);
+		printf("0x%08X", pair.first);
 		cout << ", " << pair.second << endl;
 	}
 
